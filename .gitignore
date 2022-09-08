@@ -1,32 +1,17 @@
-# Prerequisites
-*.d
+build/
+build*/
+export/
+cache/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+.vagrant/
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# IDE
+.vs/
+.cache/
+# Kdevelop
+.kdev4/
+*.kdev4
+# vim
+compile_commands.json
+*.swp
+*.user
