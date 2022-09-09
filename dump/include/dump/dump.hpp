@@ -184,7 +184,7 @@
 #define DUMP_CONCATENATE1(a, b) DUMP_CONCATENATE2(a, b)
 #define DUMP_CONCATENATE2(a, b) a##b
 
-#define DUMP_NARG(...) DUMP_NARG_(__VA_ARGS__ __VA_OPT__(,) DUMP_RSEQ_N())
+#define DUMP_NARG(...) DUMP_NARG_(__VA_ARGS__ __VA_OPT__(, ) DUMP_RSEQ_N())
 #define DUMP_NARG_(...) DUMP_ARG_N(__VA_ARGS__)
 #define DUMP_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
 #define DUMP_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
@@ -198,13 +198,12 @@
 #define DUMP_FOR_EACH_N6(F, a, ...) F(a) DUMP_FOR_EACH_N5(F, __VA_ARGS__)
 #define DUMP_FOR_EACH_N7(F, a, ...) F(a) DUMP_FOR_EACH_N6(F, __VA_ARGS__)
 #define DUMP_FOR_EACH_N8(F, a, ...) F(a) DUMP_FOR_EACH_N7(F, __VA_ARGS__)
-#define DUMP_FOR_EACH_(M, F, ...) M(F __VA_OPT__(,) __VA_ARGS__)
+#define DUMP_FOR_EACH_(M, F, ...) M(F __VA_OPT__(, ) __VA_ARGS__)
 #define DUMP_FOR_EACH(F, ...)                                                  \
   DUMP_FOR_EACH_(DUMP_CONCATENATE(DUMP_FOR_EACH_N, DUMP_NARG(__VA_ARGS__)), F, \
                  __VA_ARGS__)
 
 #define DUMP(...) DUMP_INTERNAL((), __VA_ARGS__)
-
 
 /* need extra level to force extra eval */
 #define DUMP_STRINGIZE(a) DUMP_STRINGIZE1(a)
@@ -220,31 +219,30 @@
 #define DUMP_GEN_ONE_BINDING(a) DUMP_GEN_ONE_BINDING1(a)
 #define DUMP_GEN_ONE_BINDING1(a) DUMP_GEN_ONE_BINDING2(a)
 #define DUMP_GEN_ONE_BINDING2(a) , &a = a
-#define DUMP_GEN_BINDING(binding) & DUMP_FOR_EACH(DUMP_GEN_ONE_BINDING, DUMP_RM_PARENS(binding))
+#define DUMP_GEN_BINDING(binding) \
+  &DUMP_FOR_EACH(DUMP_GEN_ONE_BINDING, DUMP_RM_PARENS(binding))
 
-#define DUMP_INTERNAL(binding, ...) \
-  ::dump::internal_dump::make_dump<>( \
-    ::dump::internal_dump::DumpNames{ DUMP_STRINGIFY(__VA_ARGS__) }, \
-    [ DUMP_GEN_BINDING(binding) ] (\
-      std::ostream& os, \
-      const std::string& field_sep, \
-      const std::string& kv_sep, \
-      const ::dump::internal_dump::DumpNames& names \
-    ) { \
-      ::dump::internal_dump::print_fields { \
-        .os=os, \
-        .field_sep=field_sep, \
-        .kv_sep=kv_sep, \
-        .names=names, \
-        } (__VA_ARGS__); \
-    } \
-  )
-
+#define DUMP_INTERNAL(binding, ...)                    \
+  ::dump::internal_dump::make_dump<>(                  \
+    ::dump::internal_dump::DumpNames{                  \
+          DUMP_STRINGIFY(__VA_ARGS__) },               \
+    [DUMP_GEN_BINDING(binding)](                       \
+      ::std::ostream& os,                              \
+      const ::std::string& field_sep,                  \
+      const ::std::string& kv_sep,                     \
+      const ::dump::internal_dump::DumpNames& names) { \
+      ::dump::internal_dump::print_fields {            \
+        .os=os,                                        \
+        .field_sep=field_sep,                          \
+        .kv_sep=kv_sep,                                \
+        .names=names,                                  \
+        }(__VA_ARGS__);                                \
+      })
 
 namespace dump {
 namespace internal_dump {
 
-using DumpNames = std::vector<std::string>;
+using DumpNames = ::std::vector<::std::string>;
 
 struct print_fields {
   void operator()() {}
@@ -261,27 +259,24 @@ struct print_fields {
   }
 
   std::ostream& os;
-  const std::string& field_sep;
-  const std::string& kv_sep;
+  const ::std::string& field_sep;
+  const ::std::string& kv_sep;
   const DumpNames& names;
-  ::std::size_t n=0;
+  ::std::size_t n = 0;
 };
-
 
 template <class F>
 class Dump {
  public:
   explicit Dump(
-      const std::string&& field_sep
-      ,const std::string&& kv_sep
-      ,DumpNames&& names
-      ,F f
-      ) :
-        field_sep_(std::move(field_sep))
-        ,kv_sep_(std::move(kv_sep))
-        ,names_(std::move(names))
-        ,f_(std::move(f))
-     {}
+      const ::std::string&& field_sep,
+      const ::std::string&& kv_sep,
+      DumpNames&& names,
+      F f):
+        field_sep_(::std::move(field_sep)),
+        kv_sep_(::std::move(kv_sep)),
+        names_(::std::move(names)),
+        f_(::std::move(f)) {}
 
   ::std::string str() const {
     ::std::ostringstream oss;
@@ -292,21 +287,20 @@ class Dump {
   template <class... N>
   Dump<F> as(N&&... names) const {
     return Dump<F>(
-        std::string{field_sep_}
-        ,std::string{kv_sep_}
-        ,DumpNames{names...}
-        ,f_
-        );
+        ::std::string{field_sep_},
+        ::std::string{kv_sep_},
+        DumpNames{names...},
+        f_);
   }
 
-  Dump& sep(std::string&& field_sep) {
-    field_sep_ = std::move(field_sep);
+  Dump& sep(::std::string&& field_sep) {
+    field_sep_ = ::std::move(field_sep);
     return *this;
   }
 
-  Dump& sep(std::string&& field_sep, std::string&& kv_sep) {
-    field_sep_ = std::move(field_sep);
-    kv_sep_ = std::move(kv_sep);
+  Dump& sep(::std::string&& field_sep, ::std::string&& kv_sep) {
+    field_sep_ = ::std::move(field_sep);
+    kv_sep_ = ::std::move(kv_sep);
     return *this;
   }
 
@@ -336,22 +330,22 @@ class Dump {
     */
   }
 
-  std::string field_sep_;
-  std::string kv_sep_;
+  ::std::string field_sep_;
+  ::std::string kv_sep_;
   DumpNames names_;
   F f_;
 };
 
 template <class F>
 Dump<F> make_dump(
-    DumpNames&& names
-    ,F f
+    DumpNames&& names,
+    F f
 ) {
   return Dump<F>(
-      /*field_sep=*/", "
-      ,/*kv_sep=*/" = "
-      ,std::move(names)
-      ,std::move(f)
+      /*field_sep=*/", ",
+      /*kv_sep=*/" = ",
+      ::std::move(names),
+      ::std::move(f)
   );
 }
 
