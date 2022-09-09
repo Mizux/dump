@@ -34,38 +34,24 @@
 #include <vector>
 
 /* need extra level to force extra eval */
-#define DUMP_EXPAND(x) x
-#define DUMP_NARG(...) DUMP_EXPAND(DUMP_NARG_(__VA_OPT__(__VA_ARGS__ ,) DUMP_RSEQ_N()))
-#define DUMP_NARG_(...) DUMP_EXPAND(DUMP_ARG_N(__VA_ARGS__))
-#define DUMP_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
-#define DUMP_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
-#define DUMP_CONCATENATE(x,y) x##y
 #define DUMP_FOR_EACH_N0(F)
 #define DUMP_FOR_EACH_N1(F, a) F(a)
-#define DUMP_FOR_EACH_N2(F, a, ...) F(a) DUMP_EXPAND(DUMP_FOR_EACH_N1(F, __VA_ARGS__))
-#define DUMP_FOR_EACH_N3(F, a, ...) F(a) DUMP_EXPAND(DUMP_FOR_EACH_N2(F, __VA_ARGS__))
-#define DUMP_FOR_EACH_N4(F, a, ...) F(a) DUMP_EXPAND(DUMP_FOR_EACH_N3(F, __VA_ARGS__))
-#define DUMP_FOR_EACH_N5(F, a, ...) F(a) DUMP_EXPAND(DUMP_FOR_EACH_N4(F, __VA_ARGS__))
-#define DUMP_FOR_EACH_N6(F, a, ...) F(a) DUMP_EXPAND(DUMP_FOR_EACH_N5(F, __VA_ARGS__))
-#define DUMP_FOR_EACH_N7(F, a, ...) F(a) DUMP_EXPAND(DUMP_FOR_EACH_N6(F, __VA_ARGS__))
-#define DUMP_FOR_EACH_N8(F, a, ...) F(a) DUMP_EXPAND(DUMP_FOR_EACH_N7(F, __VA_ARGS__))
-#define DUMP_FOR_EACH_(N, F, ...) DUMP_EXPAND(DUMP_CONCATENATE(DUMP_FOR_EACH_N, N)(F __VA_OPT__(, __VA_ARGS__)))
+#define DUMP_FOR_EACH_N2(F, a, ...) F(a) DUMP_FOR_EACH_N1(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N3(F, a, ...) F(a) DUMP_FOR_EACH_N2(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N4(F, a, ...) F(a) DUMP_FOR_EACH_N3(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N5(F, a, ...) F(a) DUMP_FOR_EACH_N4(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N6(F, a, ...) F(a) DUMP_FOR_EACH_N5(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N7(F, a, ...) F(a) DUMP_FOR_EACH_N6(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N8(F, a, ...) F(a) DUMP_FOR_EACH_N7(F, __VA_ARGS__)
+
+#define DUMP_CONCATENATE(x,y) x##y
+#define DUMP_FOR_EACH_(N, F, ...) DUMP_CONCATENATE(DUMP_FOR_EACH_N, N)(F __VA_OPT__(, __VA_ARGS__))
+
+#define DUMP_NARG(...) DUMP_NARG_(__VA_OPT__(__VA_ARGS__ ,) DUMP_RSEQ_N())
+#define DUMP_NARG_(...) DUMP_ARG_N(__VA_ARGS__)
+#define DUMP_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
+#define DUMP_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
 #define DUMP_FOR_EACH(F, ...) DUMP_FOR_EACH_(DUMP_NARG(__VA_ARGS__), F __VA_OPT__(,  __VA_ARGS__))
-
-//#define DUMP_PARENS ()
-//#define DUMP_EXPAND(...) DUMP_EXPAND4(DUMP_EXPAND4(DUMP_EXPAND4(DUMP_EXPAND4(__VA_ARGS__))))
-//#define DUMP_EXPAND4(...) DUMP_EXPAND3(DUMP_EXPAND3(DUMP_EXPAND3(DUMP_EXPAND3(__VA_ARGS__))))
-//#define DUMP_EXPAND3(...) DUMP_EXPAND2(DUMP_EXPAND2(DUMP_EXPAND2(DUMP_EXPAND2(__VA_ARGS__))))
-//#define DUMP_EXPAND2(...) DUMP_EXPAND1(DUMP_EXPAND1(DUMP_EXPAND1(DUMP_EXPAND1(__VA_ARGS__))))
-//#define DUMP_EXPAND1(...) __VA_ARGS__
-//
-//#define DUMP_FOR_EACH(macro, ...)                                    \
-//  __VA_OPT__(DUMP_EXPAND(DUMP_FOR_EACH_HELPER(macro, __VA_ARGS__)))
-//#define DUMP_FOR_EACH_HELPER(macro, a1, ...)                         \
-//  macro(a1)                                                     \
-//  __VA_OPT__(DUMP_FOR_EACH_AGAIN DUMP_PARENS (macro, __VA_ARGS__))
-//#define DUMP_FOR_EACH_AGAIN() DUMP_FOR_EACH_HELPER
-
 
 #define DUMP(...) DUMP_INTERNAL((), __VA_ARGS__)
 
