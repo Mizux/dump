@@ -76,7 +76,7 @@
 
 /* need extra level to force extra eval */
 #define DUMP_STRINGIZE(a) #a,
-#define DUMP_STRINGIFY(...) DUMP_FOR_EACH(DUMP_STRINGIZE, __VA_ARGS__)
+#define DUMP_STRINGIFY(...) DUMP_FOR_EACH(DUMP_STRINGIZE __VA_OPT__(, __VA_ARGS__))
 
 // Returns the arguments.
 #define DUMP_IDENTITY(...) __VA_ARGS__
