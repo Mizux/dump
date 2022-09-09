@@ -184,12 +184,12 @@
 #define DUMP_CONCATENATE1(a, b) DUMP_CONCATENATE2(a, b)
 #define DUMP_CONCATENATE2(a, b) a##b
 
-#define DUMP_NARG(...) DUMP_NARG_(__VA_ARGS__, DUMP_RSEQ_N())
+#define DUMP_NARG(...) DUMP_NARG_(__VA_ARGS__ __VA_OPT__(,) DUMP_RSEQ_N())
 #define DUMP_NARG_(...) DUMP_ARG_N(__VA_ARGS__)
 #define DUMP_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
 #define DUMP_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
 
-#define DUMP_FOR_EACH_N0(F)
+#define DUMP_FOR_EACH_N0(F, a)
 #define DUMP_FOR_EACH_N1(F, a) F(a)
 #define DUMP_FOR_EACH_N2(F, a, ...) F(a), DUMP_FOR_EACH_N1(F, __VA_ARGS__)
 #define DUMP_FOR_EACH_N3(F, a, ...) F(a), DUMP_FOR_EACH_N2(F, __VA_ARGS__)
