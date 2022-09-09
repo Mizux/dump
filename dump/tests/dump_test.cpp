@@ -32,23 +32,23 @@ template <class T>
 }
 
 TEST(DumpVars, Empty) {
-  EXPECT_EQ(R"({})", ToString(DUMP()));
-  EXPECT_EQ(R"({})", DUMP().str());
+  EXPECT_EQ(R"()", ToString(DUMP()));
+  EXPECT_EQ(R"()", DUMP().str());
 }
 
 TEST(DumpVars, Lvalue) {
   int a = 42;
-  EXPECT_EQ(R"({a = 42})", ToString(DUMP(a)));
+  EXPECT_EQ(R"(a = 42)", ToString(DUMP(a)));
   ::std::string foo = "hello";
-  EXPECT_EQ(R"({foo = hello})", ToString(DUMP(foo)));
-  EXPECT_EQ(R"({foo = hello})", DUMP(foo).str());
-  EXPECT_EQ(R"({x = hello})", ToString(DUMP(foo).as("x")));
+  EXPECT_EQ(R"(foo = hello)", ToString(DUMP(foo)));
+  EXPECT_EQ(R"(foo = hello)", DUMP(foo).str());
+  EXPECT_EQ(R"(x = hello)", ToString(DUMP(foo).as("x")));
 }
 
 TEST(DumpVars, Rvalue) {
-  EXPECT_EQ("{2 + 2 = 4}", ToString(DUMP(2 + 2)));
-  EXPECT_EQ("{2 + 2 = 4}", DUMP(2 + 2).str());
-  EXPECT_EQ("{x = 4}", ToString(DUMP(2 + 2).as("x")));
+  EXPECT_EQ("2 + 2 = 4", ToString(DUMP(2 + 2)));
+  EXPECT_EQ("2 + 2 = 4", DUMP(2 + 2).str());
+  EXPECT_EQ("x = 4", ToString(DUMP(2 + 2).as("x")));
 }
 
 #define FORTY_TWO 42
@@ -57,12 +57,12 @@ TEST(DumpVars, Rvalue) {
 TEST(DumpVars, Macro) {
   // Macros get evaluated before they are stringized. It's not necessarily good,
   // but we'll have a test for it to serve as a documentation of facts.
-  EXPECT_EQ("{42 = 42}", ToString(DUMP(FORTY_TWO)));
-  EXPECT_EQ("{42 = 42}", DUMP(FORTY_TWO).str());
+  EXPECT_EQ("42 = 42", ToString(DUMP(FORTY_TWO)));
+  EXPECT_EQ("42 = 42", DUMP(FORTY_TWO).str());
 
-  EXPECT_EQ("{1 = 1, 2 = 2}", ToString(DUMP(ONE_AND_TWO)));
-  EXPECT_EQ("{1 = 1, 2 = 2}", DUMP(ONE_AND_TWO).str());
-  EXPECT_EQ("{one = 1, two = 2}",
+  EXPECT_EQ("1 = 1, 2 = 2", ToString(DUMP(ONE_AND_TWO)));
+  EXPECT_EQ("1 = 1, 2 = 2", DUMP(ONE_AND_TWO).str());
+  EXPECT_EQ("one = 1, two = 2",
             ToString(DUMP(ONE_AND_TWO).as("one", "two")));
 }
 
@@ -72,12 +72,12 @@ int Plus() {
 }
 
 TEST(DumpVars, Parens) {
-  EXPECT_EQ("{x = 5}", ToString(DUMP(Plus<2, 3>()).as("x")));
-  EXPECT_EQ("{(Plus<2, 3>()) = 5}", ToString(DUMP((Plus<2, 3>()))));
-  EXPECT_EQ("{(Plus<2, 3>()) = 5}", DUMP((Plus<2, 3>())).str());
-  EXPECT_EQ("{((Plus<2, 3>())) = 5}", ToString(DUMP(((Plus<2, 3>())))));
-  EXPECT_EQ("{((Plus<2, 3>())) = 5}", DUMP(((Plus<2, 3>()))).str());
-  EXPECT_EQ("{Parens = 5}", DUMP(((Plus<2, 3>()))).as("Parens").str());
+  EXPECT_EQ("x = 5", ToString(DUMP(Plus<2, 3>()).as("x")));
+  EXPECT_EQ("(Plus<2, 3>()) = 5", ToString(DUMP((Plus<2, 3>()))));
+  EXPECT_EQ("(Plus<2, 3>()) = 5", DUMP((Plus<2, 3>())).str());
+  EXPECT_EQ("((Plus<2, 3>())) = 5", ToString(DUMP(((Plus<2, 3>())))));
+  EXPECT_EQ("((Plus<2, 3>())) = 5", DUMP(((Plus<2, 3>()))).str());
+  EXPECT_EQ("Parens = 5", DUMP(((Plus<2, 3>()))).as("Parens").str());
 }
 
 TEST(DumpVars, Bindings) {
@@ -86,21 +86,21 @@ TEST(DumpVars, Bindings) {
   v.push_back({3, std::make_unique<std::string>("hello")});
   const std::string foo = "bar";
   for (const auto& [i, s] : v) {
-    EXPECT_EQ("{i = 3, *s = hello, foo = bar}",
+    EXPECT_EQ("i = 3, *s = hello, foo = bar",
               ToString(DUMP_INTERNAL((i, s), i, *s, foo)));
   }
 }
 
 TEST(DumpVars, NamesOverride) {
-  EXPECT_EQ("{z = 5}", ToString(DUMP(5).as().as("x", "y").as("z")));
+  EXPECT_EQ("z = 5", ToString(DUMP(5).as().as("x", "y").as("z")));
 }
 
 TEST(DumpVars, TwoValues) {
   int foo = 42;
   int bar = 24;
-  EXPECT_EQ("{foo = 42, bar = 24}", ToString(DUMP(foo, bar)));
-  EXPECT_EQ("{foo = 42, bar = 24}", DUMP(foo, bar).str());
-  EXPECT_EQ("{bar = 42, foo = 24}", DUMP(foo, bar).as("bar", "foo").str());
+  EXPECT_EQ("foo = 42, bar = 24", ToString(DUMP(foo, bar)));
+  EXPECT_EQ("foo = 42, bar = 24", DUMP(foo, bar).str());
+  EXPECT_EQ("bar = 42, foo = 24", DUMP(foo, bar).as("bar", "foo").str());
 }
 
 TEST(DumpVars, ManyArgs) {
@@ -110,8 +110,8 @@ TEST(DumpVars, ManyArgs) {
   int d = 5;
   int e = 7;
   int f = 11;
-  EXPECT_EQ("{a = 1, b = 2, c = 3, d = 5, e = 7, f = 11}", ToString(DUMP(a, b, c, d, e, f)));
-  EXPECT_EQ("{a = 1, b = 2, c = 3, d = 5, e = 7, f = 11}", DUMP(a, b, c, d, e, f).str());
+  EXPECT_EQ("a = 1, b = 2, c = 3, d = 5, e = 7, f = 11", ToString(DUMP(a, b, c, d, e, f)));
+  EXPECT_EQ("a = 1, b = 2, c = 3, d = 5, e = 7, f = 11", DUMP(a, b, c, d, e, f).str());
 }
 
 TEST(DumpVars, LazyEvaluation) {
@@ -120,15 +120,15 @@ TEST(DumpVars, LazyEvaluation) {
     auto F = [&]() { return ++n; };
     auto vars = DUMP(F());
     EXPECT_EQ(0, n);
-    EXPECT_EQ("{F() = 1}", ToString(vars));
+    EXPECT_EQ("F() = 1", ToString(vars));
     EXPECT_EQ(1, n);
-    EXPECT_EQ("{F() = 2}", ToString(vars));
+    EXPECT_EQ("F() = 2", ToString(vars));
     EXPECT_EQ(2, n);
-    EXPECT_EQ("{F() = 3}", vars.str());
+    EXPECT_EQ("F() = 3", vars.str());
     EXPECT_EQ(3, n);
-    EXPECT_EQ("{F() = 4}", vars.str());
+    EXPECT_EQ("F() = 4", vars.str());
     EXPECT_EQ(4, n);
-    EXPECT_EQ("{5 = 5}", vars.as("5").str());
+    EXPECT_EQ("5 = 5", vars.as("5").str());
     EXPECT_EQ(5, n);
   }
   {
@@ -136,26 +136,26 @@ TEST(DumpVars, LazyEvaluation) {
     auto F = [&]() { return ++n; };
     auto vars = DUMP(F()).as("x");
     EXPECT_EQ(0, n);
-    EXPECT_EQ("{x = 1}", ToString(vars));
+    EXPECT_EQ("x = 1", ToString(vars));
     EXPECT_EQ(1, n);
-    EXPECT_EQ("{x = 2}", ToString(vars));
+    EXPECT_EQ("x = 2", ToString(vars));
     EXPECT_EQ(2, n);
-    EXPECT_EQ("{x = 3}", vars.str());
+    EXPECT_EQ("x = 3", vars.str());
     EXPECT_EQ(3, n);
-    EXPECT_EQ("{x = 4}", vars.str());
+    EXPECT_EQ("x = 4", vars.str());
     EXPECT_EQ(4, n);
-    EXPECT_EQ("{y = 5}", vars.as("y").str());
+    EXPECT_EQ("y = 5", vars.as("y").str());
     EXPECT_EQ(5, n);
   }
 }
 
 TEST(DumpVars, TemporaryLifetime) {
-  EXPECT_EQ(R"({std::string_view(std::string("hello")) = hello})",
+  EXPECT_EQ(R"(std::string_view(std::string("hello")) = hello)",
             ToString(DUMP(std::string_view(std::string("hello")))));
   auto v = DUMP(std::string_view(std::string("hello")));
-  EXPECT_EQ(R"({std::string_view(std::string("hello")) = hello})",
+  EXPECT_EQ(R"(std::string_view(std::string("hello")) = hello)",
             ToString(v));
-  EXPECT_EQ("{temp = hello}", ToString(v.as("temp")));
+  EXPECT_EQ("temp = hello", ToString(v.as("temp")));
 }
 
 }  // namespace

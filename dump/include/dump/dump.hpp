@@ -163,7 +163,6 @@
 #include <ostream>
 #include <sstream>
 #include <string>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -174,26 +173,11 @@
 
 // Returns an ostreamable type that prints all passed arguments as key-value
 // pairs. Primarily used for logging.
-//
 //   int foo = 42;
 //   vector<int> bar = {1, 2, 3};
 //   LOG(INFO) << DUMP(foo, bar.size());
-//
 // Prints:
-//
 //   foo = 42, bar.size() = 3
-//
-// NOTE: if you get a compile error saying "no matching function for call to
-// 'make_fields'", you need to surround some of the arguments with parentheses.
-//
-//   // error: no matching function for call to 'make_fields'.
-//   // DUMP gets confused: it thinks we are passing it two arguments.
-//   LOG(INFO) << DUMP(pair<int, int>());
-//
-//   // This works! Note the parentheses around the argument.
-//   LOG(INFO) << DUMP((pair<int, int>()));
-//
-// See comments at the top of the file for details.
 
 /* need extra level to force extra eval */
 #define DUMP_CONCATENATE(a, b) DUMP_CONCATENATE1(a, b)
@@ -219,18 +203,37 @@
   DUMP_FOR_EACH_(DUMP_CONCATENATE(DUMP_FOR_EACH_N, DUMP_NARG(__VA_ARGS__)), F, \
                  __VA_ARGS__)
 
+#define DUMP(...) DUMP_INTERNAL((), __VA_ARGS__)
+
+
+/* need extra level to force extra eval */
 #define DUMP_STRINGIZE(a) DUMP_STRINGIZE1(a)
 #define DUMP_STRINGIZE1(a) DUMP_STRINGIZE2(a)
 #define DUMP_STRINGIZE2(a) #a
-
 #define DUMP_STRINGIFY(...) DUMP_FOR_EACH(DUMP_STRINGIZE, __VA_ARGS__)
 
-#define DUMP(...) DUMP_INTERNAL(ignored, __VA_ARGS__)
+// Returns the arguments.
+#define DUMP_IDENTITY(...) __VA_ARGS__
+// Removes parenthesis. Requires argument enclosed in parenthesis.
+#define DUMP_RM_PARENS(...) DUMP_IDENTITY __VA_ARGS__
+#define DUMP_GEN_BINDING(binding) DUMP_RM_PARENS(binding)
 
-#define DUMP_INTERNAL(ignored, ...) \
+#define DUMP_INTERNAL(binding, ...) \
   ::dump::internal_dump::make_dump<>( \
-   ::dump::internal_dump::DumpNames{ DUMP_STRINGIFY(__VA_ARGS__) }, \
-   ::std::make_tuple( __VA_ARGS__ ) \
+    ::dump::internal_dump::DumpNames{ DUMP_STRINGIFY(__VA_ARGS__) }, \
+    [ & /*DUMP_GEN_BINDING(binding)*/ ] (\
+      std::ostream& os, \
+      const std::string& field_sep, \
+      const std::string& kv_sep, \
+      const ::dump::internal_dump::DumpNames& names \
+    ) { \
+      ::dump::internal_dump::print_fields { \
+        .os=os, \
+        .field_sep=field_sep, \
+        .kv_sep=kv_sep, \
+        .names=names, \
+        } (__VA_ARGS__); \
+    } \
   )
 
 
@@ -239,18 +242,44 @@ namespace internal_dump {
 
 using DumpNames = std::vector<std::string>;
 
-template <class... Ts>
+struct print_fields {
+  void operator()() {}
+
+  template <class T>
+  void operator()(const T& t) {
+    os << names[n++] << kv_sep << t;
+  }
+
+  template <class T1, class T2, class... Ts>
+  void operator()(const T1& t1, const T2& t2, const Ts&... ts) {
+    os << names[n++] << kv_sep << t1 << field_sep;
+    (*this)(t2, ts...);
+  }
+
+  std::ostream& os;
+  const std::string& field_sep;
+  const std::string& kv_sep;
+  const DumpNames& names;
+  ::std::size_t n=0;
+};
+
+
+template <class F/*, class... Ts*/>
 class Dump {
  public:
   explicit Dump(
-      const std::string&& field_sep,
-      const std::string&& kv_sep,
-      DumpNames&& names,
-      ::std::tuple<Ts...>&& ts) :
-        field_sep_(std::move(field_sep)),
-        kv_sep_(std::move(kv_sep)),
-        names_(std::move(names)),
-        ts_(std::move(ts)) {}
+      const std::string&& field_sep
+      ,const std::string&& kv_sep
+      ,DumpNames&& names
+      ,F f
+      //,::std::tuple<Ts...>&& ts
+      ) :
+        field_sep_(std::move(field_sep))
+        ,kv_sep_(std::move(kv_sep))
+        ,names_(std::move(names))
+        ,f_(std::move(f))
+        //,ts_(std::move(ts)
+     {}
 
   ::std::string str() const {
     ::std::ostringstream oss;
@@ -258,13 +287,15 @@ class Dump {
     return oss.str();
   }
 
-  template <class... T>
-  Dump<Ts...> as(T&&... names) const {
-    return Dump<Ts...>(
-        std::string{field_sep_},
-        std::string{kv_sep_},
-        DumpNames{names...},
-        ::std::tuple<Ts...>{ts_});
+  template <class... N>
+  Dump<F/*, Ts...*/> as(N&&... names) const {
+    return Dump<F/*, Ts...*/>(
+        std::string{field_sep_}
+        ,std::string{kv_sep_}
+        ,DumpNames{names...}
+        ,f_
+        //,::std::tuple<Ts...>{ts_}
+        );
   }
 
   Dump& sep(std::string&& field_sep) {
@@ -292,6 +323,8 @@ class Dump {
 
  private:
   void print_fields_(::std::ostream& os) const {
+    f_(os, field_sep_, kv_sep_, names_);
+    /*
     std::apply(
         [this, &os](Ts const&... ts) {
           os << '{';
@@ -299,21 +332,29 @@ class Dump {
           ((os << names_[n] << kv_sep_ << ts << (++n != sizeof...(Ts) ? field_sep_ : "")), ...);
           os << '}';
         }, ts_);
+    */
   }
 
   std::string field_sep_;
   std::string kv_sep_;
   DumpNames names_;
-  ::std::tuple<Ts...> ts_;
+  F f_;
+  //::std::tuple<Ts...> ts_;
 };
 
-template <class... Ts>
-Dump<Ts...> make_dump(DumpNames&& names, ::std::tuple<Ts...>&& ts) {
-  return Dump<Ts...>(
-      /*field_sep=*/", ",
-      /*kv_sep=*/" = ",
-      std::move(names),
-      std::move(ts));
+template <class F/*, class... Ts*/>
+Dump<F/*, Ts...*/> make_dump(
+    DumpNames&& names
+    ,F f
+    //, ::std::tuple<Ts...>&& ts
+) {
+  return Dump<F/*, Ts...*/>(
+      /*field_sep=*/", "
+      ,/*kv_sep=*/" = "
+      ,std::move(names)
+      ,std::move(f)
+      //,std::move(ts)
+  );
 }
 
 }  // namespace internal_dump
