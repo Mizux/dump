@@ -6,7 +6,7 @@ target_include_directories(dump
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 if(MSVC)
-  target_compile_definitions(dump INTERFACE
+  target_compile_options(dump INTERFACE
     "/Zc:preprocessor" # Enable preprocessor conformance mode
   )
 endif()
