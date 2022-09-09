@@ -191,13 +191,13 @@
 
 #define DUMP_FOR_EACH_N0(F, a)
 #define DUMP_FOR_EACH_N1(F, a) F(a)
-#define DUMP_FOR_EACH_N2(F, a, ...) F(a), DUMP_FOR_EACH_N1(F, __VA_ARGS__)
-#define DUMP_FOR_EACH_N3(F, a, ...) F(a), DUMP_FOR_EACH_N2(F, __VA_ARGS__)
-#define DUMP_FOR_EACH_N4(F, a, ...) F(a), DUMP_FOR_EACH_N3(F, __VA_ARGS__)
-#define DUMP_FOR_EACH_N5(F, a, ...) F(a), DUMP_FOR_EACH_N4(F, __VA_ARGS__)
-#define DUMP_FOR_EACH_N6(F, a, ...) F(a), DUMP_FOR_EACH_N5(F, __VA_ARGS__)
-#define DUMP_FOR_EACH_N7(F, a, ...) F(a), DUMP_FOR_EACH_N6(F, __VA_ARGS__)
-#define DUMP_FOR_EACH_N8(F, a, ...) F(a), DUMP_FOR_EACH_N7(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N2(F, a, ...) F(a) DUMP_FOR_EACH_N1(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N3(F, a, ...) F(a) DUMP_FOR_EACH_N2(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N4(F, a, ...) F(a) DUMP_FOR_EACH_N3(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N5(F, a, ...) F(a) DUMP_FOR_EACH_N4(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N6(F, a, ...) F(a) DUMP_FOR_EACH_N5(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N7(F, a, ...) F(a) DUMP_FOR_EACH_N6(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N8(F, a, ...) F(a) DUMP_FOR_EACH_N7(F, __VA_ARGS__)
 #define DUMP_FOR_EACH_(M, F, ...) M(F, __VA_ARGS__)
 #define DUMP_FOR_EACH(F, ...)                                                  \
   DUMP_FOR_EACH_(DUMP_CONCATENATE(DUMP_FOR_EACH_N, DUMP_NARG(__VA_ARGS__)), F, \
@@ -209,19 +209,23 @@
 /* need extra level to force extra eval */
 #define DUMP_STRINGIZE(a) DUMP_STRINGIZE1(a)
 #define DUMP_STRINGIZE1(a) DUMP_STRINGIZE2(a)
-#define DUMP_STRINGIZE2(a) #a
+#define DUMP_STRINGIZE2(a) #a,
 #define DUMP_STRINGIFY(...) DUMP_FOR_EACH(DUMP_STRINGIZE, __VA_ARGS__)
 
 // Returns the arguments.
 #define DUMP_IDENTITY(...) __VA_ARGS__
 // Removes parenthesis. Requires argument enclosed in parenthesis.
 #define DUMP_RM_PARENS(...) DUMP_IDENTITY __VA_ARGS__
-#define DUMP_GEN_BINDING(binding) DUMP_RM_PARENS(binding)
+
+#define DUMP_GEN_ONE_BINDING(a) DUMP_GEN_ONE_BINDING1(a)
+#define DUMP_GEN_ONE_BINDING1(a) DUMP_GEN_ONE_BINDING2(a)
+#define DUMP_GEN_ONE_BINDING2(a) , &a = a
+#define DUMP_GEN_BINDING(binding) & DUMP_FOR_EACH(DUMP_GEN_ONE_BINDING, DUMP_RM_PARENS(binding))
 
 #define DUMP_INTERNAL(binding, ...) \
   ::dump::internal_dump::make_dump<>( \
     ::dump::internal_dump::DumpNames{ DUMP_STRINGIFY(__VA_ARGS__) }, \
-    [ & /*DUMP_GEN_BINDING(binding)*/ ] (\
+    [ DUMP_GEN_BINDING(binding) ] (\
       std::ostream& os, \
       const std::string& field_sep, \
       const std::string& kv_sep, \
