@@ -1,4 +1,4 @@
-// DUMP_VARS() is a convenience macro for writing objects to text logs. It
+// DUMP() is a convenience macro for writing objects to text logs. It
 // prints all of its arguments as key-value pairs.
 //
 // Example:
@@ -6,44 +6,44 @@
 //   int foo = 42;
 //   vector<int> bar = {1, 2, 3};
 //   // Prints: foo = 42, bar.size() = 3
-//   LOG(INFO) << DUMP_VARS(foo, bar.size());
+//   LOG(INFO) << DUMP(foo, bar.size());
 //
-// DUMP_VARS() produces high quality human-readable output for most types: builtin
-// types, strings, protocol buffers, containers, tuples, smart pointers, Status,
-// StatusOr, optional, anything with operator<<, and more. If everything else
-// fails, objects are hex-dumped.
+// DUMP() produces high quality human-readable output for most types:
+// builtin types, strings, protocol buffers, containers, tuples, smart pointers,
+// Status, StatusOr, optional, anything with operator<<, and more. If everything
+// else fails, objects are hex-dumped.
 //
 //                     ====[ Semantics ]====
 //
-//   LOG(INFO) << DUMP_VARS(expr1, ..., exprN);
+//   LOG(INFO) << DUMP(expr1, ..., exprN);
 //
 // Member function as() can be used to override field names.
 //
-//   LOG(INFO) << DUMP_VARS(expr1, ..., exprN).as("name1", ..., "nameN");
+//   LOG(INFO) << DUMP(expr1, ..., exprN).as("name1", ..., "nameN");
 //
 //                   ====[ Best Practices ]====
 //
-// Use DUMP_VARS with LOG and CHECK messages to provide extra context.
+// Use DUMP with LOG and CHECK messages to provide extra context.
 //
-//   LOG(INFO) << "Request processed: " << DUMP_VARS(request, response);
+//   LOG(INFO) << "Request processed: " << DUMP(request, response);
 //
 //   CHECK_OK(status) << "RPC request to Frobnicator.Frobnicate failed: "
-//                    << DUMP_VARS(FLAGS_remote_service_bns, request);
+//                    << DUMP(FLAGS_remote_service_bns, request);
 //
 // It also works well with the status macros from //ortools/base/status_macros.h
 //
 //   return MAKE_ERROR(INVALID_ARGUMENT)
 //       << "The number of input and output directories should be the same: "
-//       << DUMP_VARS(in_dirs.size(), out_dirs.size(), in_dirs, out_dirs);
+//       << DUMP(in_dirs.size(), out_dirs.size(), in_dirs, out_dirs);
 //
-// DUMP_VARS can print values of any type. Do use it in generic functions and
+// DUMP can print values of any type. Do use it in generic functions and
 // macros where the types of the arguments are unknown. Best-effort printing is
 // better than none.
 //
 //   template <class K, class V>
 //   const V& FindOrDie(const std::map<K, V>& map, const K& key) {
 //     auto it = map.find(key);
-//     CHECK(it != map.end()) << "Key not found: " << DUMP_VARS(key, map);
+//     CHECK(it != map.end()) << "Key not found: " << DUMP(key, map);
 //     return it->second;
 //   }
 //
@@ -51,10 +51,10 @@
 //
 //   1. Start with a literal message in plain English. If this message simply
 //      restates the content of a CHECK macro, it can be omitted.
-//   2. Use a single DUMP_VARS() expression at the end of the message with all
+//   2. Use a single DUMP() expression at the end of the message with all
 //      relevant variables. Remember that you can use arbitrary expressions as
 //      arguments.
-//   3. Avoid writing variables other than via DUMP_VARS().
+//   3. Avoid writing variables other than via DUMP().
 //
 // There are several advantages to this style:
 //
@@ -71,15 +71,15 @@
 //   CHECK(CopyFile(src, dst)) << "Can't copy " << src << " to " << dst;
 //
 //   // GOOD. Easy to write and easy to read when the CHECK triggers.
-//   CHECK(CopyFile(src, dst)) << "Can't copy file: " << DUMP_VARS(src, dst);
+//   CHECK(CopyFile(src, dst)) << "Can't copy file: " << DUMP(src, dst);
 //
 //   // BEST. The message wasn't useful.
-//   CHECK(CopyFile(src, dst)) << DUMP_VARS(src, dst);
+//   CHECK(CopyFile(src, dst)) << DUMP(src, dst);
 //
-// If arguments to DUMP_VARS() aren't descriptive enough to be understood by
+// If arguments to DUMP() aren't descriptive enough to be understood by
 // the readers of the logs, override them with the member function as().
 //
-//    LOG(INFO) << "Opening: " << DUMP_VARS(it->second.value).as("filename");
+//    LOG(INFO) << "Opening: " << DUMP(it->second.value).as("filename");
 //
 // By default fields are separated with ", " and keys are separated from values
 // with " = ". Different separators can be specified by calling the member
@@ -87,16 +87,16 @@
 // If it's not specified, the key-value separator stays unchanged.
 //
 //    VLOG(3) << "Internal state:\n"
-//            << DUMP_VARS(a_, b_, c_, d_, e_, f_, g_, h_, i_).sep("\n", ":=");
+//            << DUMP(a_, b_, c_, d_, e_, f_, g_, h_, i_).sep("\n", ":=");
 //
-// The arguments of DUMP_VARS get evaluated during streaming. If the same
-// DUMP_VARS instance is streamed several times, the arguments are also
-// evaluated several times. This allows you to factor out DUMP_VARS() calls
+// The arguments of DUMP get evaluated during streaming. If the same
+// DUMP instance is streamed several times, the arguments are also
+// evaluated several times. This allows you to factor out DUMP() calls
 // that are repeated many times in the same function.
 //
 //   string Configuration::FindBackend(const string& service) {
 //     // this->DebugString() isn't called here yet.
-//     auto context = DUMP_VARS(service, this->DebugString());
+//     auto context = DUMP(service, this->DebugString());
 //     // Calls this->DebugString() on CHECK failure.
 //     CHECK(IsKnownService(service)) << context;
 //     CHECK(IsAccessAllowed(service)) << context;
@@ -107,36 +107,36 @@
 //
 // The streaming approach described above is generally recommended, for
 // efficiency and readability, but some situations may require a string rather
-// than a streamable object. The object returned by DUMP_VARS provides a
+// than a streamable object. The object returned by DUMP provides a
 // convenient str() method for such cases:
 //
 //   void RpcMethod(RPC*, const Request& req, Response*, Closure*) {
-//     VLOG_LINES(1, DUMP_VARS(req).str());
+//     VLOG_LINES(1, DUMP(req).str());
 //   }
 //
 //                    ====[ Limitations ]====
 //
-// DUMP_VARS() accepts at most 64 arguments.
+// DUMP() accepts at most 8 arguments.
 //
-// All arguments to DUMP_VARS() must be perfect-forwardable. Brace-expressions,
+// All arguments to DUMP() must be perfect-forwardable. Brace-expressions,
 // bit fields, and other esoterics are not supported.
 //
 //   // Compile error: {42} can't be perfect-forwarded.
-//   LOG(INFO) << DUMP_VARS({42});
+//   LOG(INFO) << DUMP({42});
 //
-// Arguments with unparenthesized commas confuse and frighten DUMP_VARS,
+// Arguments with unparenthesized commas confuse and frighten DUMP,
 // leading to compile errors. Either parenthesize problematic arguments or
 // explicitly provide names with as() to avoid this problem.
 //
-//   // Compile error. DUMP_VARS gets confused: it thinks we are passing it two
+//   // Compile error. DUMP gets confused: it thinks we are passing it two
 //   // arguments.
-//   LOG(INFO) << DUMP_VARS(pair<int, int>());
+//   LOG(INFO) << DUMP(pair<int, int>());
 //
 //   // This works! Note the parentheses around the argument.
-//   LOG(INFO) << DUMP_VARS((pair<int, int>()));
+//   LOG(INFO) << DUMP((pair<int, int>()));
 //
 //   // Also works.
-//   LOG(INFO) << DUMP_VARS(pair<int, int>()).as("p");
+//   LOG(INFO) << DUMP(pair<int, int>()).as("p");
 //
 // Values of type const char* are printed as pointers, not as strings. This is
 // a safety measure because not all pointers to char are null-terminated
@@ -144,17 +144,17 @@
 //
 //   const char* s = "hello";
 //   // s = 0x1122334455667788
-//   LOG(INFO) << DUMP_VARS(s);
+//   LOG(INFO) << DUMP(s);
 //   // absl::string_view(s) = "hello"
-//   LOG(INFO) << DUMP_VARS(absl::string_view(s));
+//   LOG(INFO) << DUMP(absl::string_view(s));
 //
-// Structured bindings require an extra step to make DUMP_VARS print them. They
-// need to be listed as first argument of DUMP_VARS_WITH_BINDINGS:
+// Structured bindings require an extra step to make DUMP print them. They
+// need to be listed as first argument of DUMP_INTERNAL:
 //
 //   for (const auto& [x, y, z] : Foo()) {
 //     // Would not compile:
-//     // LOG(INFO) << DUMP_VARS(x, *y, f(z), other_var);
-//     LOG(INFO) << DUMP_VARS_WITH_BINDINGS((x, y, z), x, *y, f(z), other_var);
+//     // LOG(INFO) << DUMP(x, *y, f(z), other_var);
+//     LOG(INFO) << DUMP_INTERNAL((x, y, z), x, *y, f(z), other_var);
 //   }
 
 #ifndef DUMP_HPP_
@@ -162,22 +162,22 @@
 
 #include <ostream>
 #include <sstream>
-#include <vector>
 #include <string>
-#include <type_traits>
 #include <tuple>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
-//#include "absl/base/thread_annotations.h"
-//#include "absl/strings/str_cat.h"
-//#include "ortools/base/macros.h"
+// #include "absl/base/thread_annotations.h"
+// #include "absl/strings/str_cat.h"
+// #include "ortools/base/macros.h"
 
 // Returns an ostreamable type that prints all passed arguments as key-value
 // pairs. Primarily used for logging.
 //
 //   int foo = 42;
 //   vector<int> bar = {1, 2, 3};
-//   LOG(INFO) << DUMP_VARS(foo, bar.size());
+//   LOG(INFO) << DUMP(foo, bar.size());
 //
 // Prints:
 //
@@ -187,36 +187,37 @@
 // 'make_fields'", you need to surround some of the arguments with parentheses.
 //
 //   // error: no matching function for call to 'make_fields'.
-//   // DUMP_VARS gets confused: it thinks we are passing it two arguments.
-//   LOG(INFO) << DUMP_VARS(pair<int, int>());
+//   // DUMP gets confused: it thinks we are passing it two arguments.
+//   LOG(INFO) << DUMP(pair<int, int>());
 //
 //   // This works! Note the parentheses around the argument.
-//   LOG(INFO) << DUMP_VARS((pair<int, int>()));
+//   LOG(INFO) << DUMP((pair<int, int>()));
 //
 // See comments at the top of the file for details.
 
 /* need extra level to force extra eval */
-#define DUMP_CONCATENATE(a,b) DUMP_CONCATENATE1(a,b)
-#define DUMP_CONCATENATE1(a,b) DUMP_CONCATENATE2(a,b)
-#define DUMP_CONCATENATE2(a,b) a ## b
+#define DUMP_CONCATENATE(a, b) DUMP_CONCATENATE1(a, b)
+#define DUMP_CONCATENATE1(a, b) DUMP_CONCATENATE2(a, b)
+#define DUMP_CONCATENATE2(a, b) a##b
 
-#define DUMP_NARG(...) DUMP_NARG_(__VA_ARGS__,DUMP_RSEQ_N())
+#define DUMP_NARG(...) DUMP_NARG_(__VA_ARGS__, DUMP_RSEQ_N())
 #define DUMP_NARG_(...) DUMP_ARG_N(__VA_ARGS__)
 #define DUMP_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
 #define DUMP_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
 
 #define DUMP_FOR_EACH_N0(F)
 #define DUMP_FOR_EACH_N1(F, a) F(a)
-#define DUMP_FOR_EACH_N2(F,a,...) F(a), DUMP_FOR_EACH_N1(F,__VA_ARGS__)
-#define DUMP_FOR_EACH_N3(F,a,...) F(a), DUMP_FOR_EACH_N2(F,__VA_ARGS__)
-#define DUMP_FOR_EACH_N4(F,a,...) F(a), DUMP_FOR_EACH_N3(F,__VA_ARGS__)
-#define DUMP_FOR_EACH_N5(F,a,...) F(a), DUMP_FOR_EACH_N4(F,__VA_ARGS__)
-#define DUMP_FOR_EACH_N6(F,a,...) F(a), DUMP_FOR_EACH_N5(F,__VA_ARGS__)
-#define DUMP_FOR_EACH_N7(F,a,...) F(a), DUMP_FOR_EACH_N6(F,__VA_ARGS__)
-#define DUMP_FOR_EACH_N8(F,a,...) F(a), DUMP_FOR_EACH_N7(F,__VA_ARGS__)
-#define DUMP_FOR_EACH_(M,F,...) M(F,__VA_ARGS__)
-#define DUMP_FOR_EACH(F,...) DUMP_FOR_EACH_( \
-    DUMP_CONCATENATE(DUMP_FOR_EACH_N, DUMP_NARG(__VA_ARGS__)), F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N2(F, a, ...) F(a), DUMP_FOR_EACH_N1(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N3(F, a, ...) F(a), DUMP_FOR_EACH_N2(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N4(F, a, ...) F(a), DUMP_FOR_EACH_N3(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N5(F, a, ...) F(a), DUMP_FOR_EACH_N4(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N6(F, a, ...) F(a), DUMP_FOR_EACH_N5(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N7(F, a, ...) F(a), DUMP_FOR_EACH_N6(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_N8(F, a, ...) F(a), DUMP_FOR_EACH_N7(F, __VA_ARGS__)
+#define DUMP_FOR_EACH_(M, F, ...) M(F, __VA_ARGS__)
+#define DUMP_FOR_EACH(F, ...)                                                  \
+  DUMP_FOR_EACH_(DUMP_CONCATENATE(DUMP_FOR_EACH_N, DUMP_NARG(__VA_ARGS__)), F, \
+                 __VA_ARGS__)
 
 #define DUMP_STRINGIZE(a) DUMP_STRINGIZE1(a)
 #define DUMP_STRINGIZE1(a) DUMP_STRINGIZE2(a)
