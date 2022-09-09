@@ -2,151 +2,17 @@
 // prints all of its arguments as key-value pairs.
 //
 // Example:
-//
 //   int foo = 42;
 //   vector<int> bar = {1, 2, 3};
 //   // Prints: foo = 42, bar.size() = 3
 //   LOG(INFO) << DUMP(foo, bar.size());
 //
 // DUMP() produces high quality human-readable output for most types:
-// builtin types, strings, protocol buffers, containers, tuples, smart pointers,
-// Status, StatusOr, optional, anything with operator<<, and more. If everything
-// else fails, objects are hex-dumped.
-//
-//                     ====[ Semantics ]====
-//
-//   LOG(INFO) << DUMP(expr1, ..., exprN);
-//
-// Member function as() can be used to override field names.
-//
-//   LOG(INFO) << DUMP(expr1, ..., exprN).as("name1", ..., "nameN");
-//
-//                   ====[ Best Practices ]====
-//
-// Use DUMP with LOG and CHECK messages to provide extra context.
-//
-//   LOG(INFO) << "Request processed: " << DUMP(request, response);
-//
-//   CHECK_OK(status) << "RPC request to Frobnicator.Frobnicate failed: "
-//                    << DUMP(FLAGS_remote_service_bns, request);
-//
-// It also works well with the status macros from //ortools/base/status_macros.h
-//
-//   return MAKE_ERROR(INVALID_ARGUMENT)
-//       << "The number of input and output directories should be the same: "
-//       << DUMP(in_dirs.size(), out_dirs.size(), in_dirs, out_dirs);
-//
-// DUMP can print values of any type. Do use it in generic functions and
-// macros where the types of the arguments are unknown. Best-effort printing is
-// better than none.
-//
-//   template <class K, class V>
-//   const V& FindOrDie(const std::map<K, V>& map, const K& key) {
-//     auto it = map.find(key);
-//     CHECK(it != map.end()) << "Key not found: " << DUMP(key, map);
-//     return it->second;
-//   }
-//
-// Use the following template for all your messages:
-//
-//   1. Start with a literal message in plain English. If this message simply
-//      restates the content of a CHECK macro, it can be omitted.
-//   2. Use a single DUMP() expression at the end of the message with all
-//      relevant variables. Remember that you can use arbitrary expressions as
-//      arguments.
-//   3. Avoid writing variables other than via DUMP().
-//
-// There are several advantages to this style:
-//
-//   * You don't have to waste mental power on creative intermixing of literal
-//     text and variables, quoting and conditional pluralization.
-//   * It'll always be clear when one variable ends and another starts. Empty
-//     strings, and strings with spaces and quotes in them won't change the
-//     meaning of your message.
-//   * Regardless of the size of the variables, the primary message will always
-//     fit in the log and will be easy to read.
-//
-//   // BAD. The message will be hard to read if src contains a sentence or
-//   // special characters, or is empty or very long.
-//   CHECK(CopyFile(src, dst)) << "Can't copy " << src << " to " << dst;
-//
-//   // GOOD. Easy to write and easy to read when the CHECK triggers.
-//   CHECK(CopyFile(src, dst)) << "Can't copy file: " << DUMP(src, dst);
-//
-//   // BEST. The message wasn't useful.
-//   CHECK(CopyFile(src, dst)) << DUMP(src, dst);
-//
-// If arguments to DUMP() aren't descriptive enough to be understood by
-// the readers of the logs, override them with the member function as().
-//
-//    LOG(INFO) << "Opening: " << DUMP(it->second.value).as("filename");
-//
-// By default fields are separated with ", " and keys are separated from values
-// with " = ". Different separators can be specified by calling the member
-// function sep(field_separator, kv_separator). The second argument is optional.
-// If it's not specified, the key-value separator stays unchanged.
-//
-//    VLOG(3) << "Internal state:\n"
-//            << DUMP(a_, b_, c_, d_, e_, f_, g_, h_, i_).sep("\n", ":=");
-//
-// The arguments of DUMP get evaluated during streaming. If the same
-// DUMP instance is streamed several times, the arguments are also
-// evaluated several times. This allows you to factor out DUMP() calls
-// that are repeated many times in the same function.
-//
-//   string Configuration::FindBackend(const string& service) {
-//     // this->DebugString() isn't called here yet.
-//     auto context = DUMP(service, this->DebugString());
-//     // Calls this->DebugString() on CHECK failure.
-//     CHECK(IsKnownService(service)) << context;
-//     CHECK(IsAccessAllowed(service)) << context;
-//     ...
-//   }
-//
-//               ====[ String Representation ]====
-//
-// The streaming approach described above is generally recommended, for
-// efficiency and readability, but some situations may require a string rather
-// than a streamable object. The object returned by DUMP provides a
-// convenient str() method for such cases:
-//
-//   void RpcMethod(RPC*, const Request& req, Response*, Closure*) {
-//     VLOG_LINES(1, DUMP(req).str());
-//   }
+// builtin types, strings, anything with operator<<.
 //
 //                    ====[ Limitations ]====
 //
 // DUMP() accepts at most 8 arguments.
-//
-// All arguments to DUMP() must be perfect-forwardable. Brace-expressions,
-// bit fields, and other esoterics are not supported.
-//
-//   // Compile error: {42} can't be perfect-forwarded.
-//   LOG(INFO) << DUMP({42});
-//
-// Arguments with unparenthesized commas confuse and frighten DUMP,
-// leading to compile errors. Either parenthesize problematic arguments or
-// explicitly provide names with as() to avoid this problem.
-//
-//   // Compile error. DUMP gets confused: it thinks we are passing it two
-//   // arguments.
-//   LOG(INFO) << DUMP(pair<int, int>());
-//
-//   // This works! Note the parentheses around the argument.
-//   LOG(INFO) << DUMP((pair<int, int>()));
-//
-//   // Also works.
-//   LOG(INFO) << DUMP(pair<int, int>()).as("p");
-//
-// Values of type const char* are printed as pointers, not as strings. This is
-// a safety measure because not all pointers to char are null-terminated
-// strings. Construct an absl::string_view if string printing is desired.
-//
-//   const char* s = "hello";
-//   // s = 0x1122334455667788
-//   LOG(INFO) << DUMP(s);
-//   // absl::string_view(s) = "hello"
-//   LOG(INFO) << DUMP(absl::string_view(s));
 //
 // Structured bindings require an extra step to make DUMP print them. They
 // need to be listed as first argument of DUMP_INTERNAL:
@@ -166,18 +32,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-// #include "absl/base/thread_annotations.h"
-// #include "absl/strings/str_cat.h"
-// #include "ortools/base/macros.h"
-
-// Returns an ostreamable type that prints all passed arguments as key-value
-// pairs. Primarily used for logging.
-//   int foo = 42;
-//   vector<int> bar = {1, 2, 3};
-//   LOG(INFO) << DUMP(foo, bar.size());
-// Prints:
-//   foo = 42, bar.size() = 3
 
 /* need extra level to force extra eval */
 #define DUMP_CONCATENATE(a, b) DUMP_CONCATENATE1(a, b)
@@ -304,14 +158,7 @@ class Dump {
     return *this;
   }
 
-  // template <class T>
-  // Dump& set_writer(T /*new_writer*/) const {
-  //   return *this;
-  // }
-
-  friend ::std::ostream& operator<<(
-      ::std::ostream& os,
-      const Dump& dump) {
+  friend ::std::ostream& operator<<(::std::ostream& os, const Dump& dump) {
     dump.print_fields_(os);
     return os;
   }
@@ -319,15 +166,6 @@ class Dump {
  private:
   void print_fields_(::std::ostream& os) const {
     f_(os, field_sep_, kv_sep_, names_);
-    /*
-    std::apply(
-        [this, &os](Ts const&... ts) {
-          os << '{';
-          std::size_t n{0};
-          ((os << names_[n] << kv_sep_ << ts << (++n != sizeof...(Ts) ? field_sep_ : "")), ...);
-          os << '}';
-        }, ts_);
-    */
   }
 
   ::std::string field_sep_;
@@ -337,10 +175,7 @@ class Dump {
 };
 
 template <class F>
-Dump<F> make_dump(
-    DumpNames&& names,
-    F f
-) {
+Dump<F> make_dump(DumpNames&& names, F f) {
   return Dump<F>(
       /*field_sep=*/", ",
       /*kv_sep=*/" = ",
