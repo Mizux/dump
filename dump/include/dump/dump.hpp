@@ -264,7 +264,7 @@ struct print_fields {
 };
 
 
-template <class F/*, class... Ts*/>
+template <class F>
 class Dump {
  public:
   explicit Dump(
@@ -272,13 +272,11 @@ class Dump {
       ,const std::string&& kv_sep
       ,DumpNames&& names
       ,F f
-      //,::std::tuple<Ts...>&& ts
       ) :
         field_sep_(std::move(field_sep))
         ,kv_sep_(std::move(kv_sep))
         ,names_(std::move(names))
         ,f_(std::move(f))
-        //,ts_(std::move(ts)
      {}
 
   ::std::string str() const {
@@ -288,13 +286,12 @@ class Dump {
   }
 
   template <class... N>
-  Dump<F/*, Ts...*/> as(N&&... names) const {
-    return Dump<F/*, Ts...*/>(
+  Dump<F> as(N&&... names) const {
+    return Dump<F>(
         std::string{field_sep_}
         ,std::string{kv_sep_}
         ,DumpNames{names...}
         ,f_
-        //,::std::tuple<Ts...>{ts_}
         );
   }
 
@@ -339,21 +336,18 @@ class Dump {
   std::string kv_sep_;
   DumpNames names_;
   F f_;
-  //::std::tuple<Ts...> ts_;
 };
 
-template <class F/*, class... Ts*/>
-Dump<F/*, Ts...*/> make_dump(
+template <class F>
+Dump<F> make_dump(
     DumpNames&& names
     ,F f
-    //, ::std::tuple<Ts...>&& ts
 ) {
-  return Dump<F/*, Ts...*/>(
+  return Dump<F>(
       /*field_sep=*/", "
       ,/*kv_sep=*/" = "
       ,std::move(names)
       ,std::move(f)
-      //,std::move(ts)
   );
 }
 
