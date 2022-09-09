@@ -114,12 +114,48 @@ TEST(DumpVars, ManyArgs) {
   EXPECT_EQ("{a = 1, b = 2, c = 3, d = 5, e = 7, f = 11}", DUMP(a, b, c, d, e, f).str());
 }
 
+TEST(DumpVars, LazyEvaluation) {
+  {
+    int n = 0;
+    auto F = [&]() { return ++n; };
+    auto vars = DUMP(F());
+    EXPECT_EQ(0, n);
+    EXPECT_EQ("{F() = 1}", ToString(vars));
+    EXPECT_EQ(1, n);
+    EXPECT_EQ("{F() = 2}", ToString(vars));
+    EXPECT_EQ(2, n);
+    EXPECT_EQ("{F() = 3}", vars.str());
+    EXPECT_EQ(3, n);
+    EXPECT_EQ("{F() = 4}", vars.str());
+    EXPECT_EQ(4, n);
+    EXPECT_EQ("{5 = 5}", vars.as("5").str());
+    EXPECT_EQ(5, n);
+  }
+  {
+    int n = 0;
+    auto F = [&]() { return ++n; };
+    auto vars = DUMP(F()).as("x");
+    EXPECT_EQ(0, n);
+    EXPECT_EQ("{x = 1}", ToString(vars));
+    EXPECT_EQ(1, n);
+    EXPECT_EQ("{x = 2}", ToString(vars));
+    EXPECT_EQ(2, n);
+    EXPECT_EQ("{x = 3}", vars.str());
+    EXPECT_EQ(3, n);
+    EXPECT_EQ("{x = 4}", vars.str());
+    EXPECT_EQ(4, n);
+    EXPECT_EQ("{y = 5}", vars.as("y").str());
+    EXPECT_EQ(5, n);
+  }
+}
+
 TEST(DumpVars, TemporaryLifetime) {
   EXPECT_EQ(R"({std::string_view(std::string("hello")) = hello})",
             ToString(DUMP(std::string_view(std::string("hello")))));
   auto v = DUMP(std::string_view(std::string("hello")));
   EXPECT_EQ(R"({std::string_view(std::string("hello")) = hello})",
             ToString(v));
+  EXPECT_EQ("{temp = hello}", ToString(v.as("temp")));
 }
 
 }  // namespace
