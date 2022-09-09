@@ -70,7 +70,7 @@
 #define DUMP(...) DUMP_INTERNAL((), __VA_ARGS__)
 
 /* need extra level to force extra eval */
-#define DUMP_STRINGIZE(a) #a,
+#define DUMP_STRINGIZE(a, ...) #a,
 #define DUMP_STRINGIFY(...) DUMP_FOR_EACH(DUMP_STRINGIZE __VA_OPT__(, __VA_ARGS__))
 
 // Returns the arguments.
@@ -78,7 +78,7 @@
 // Removes parenthesis. Requires argument enclosed in parenthesis.
 #define DUMP_RM_PARENS(...) DUMP_IDENTITY __VA_ARGS__
 
-#define DUMP_GEN_ONE_BINDING(a) , &a = a
+#define DUMP_GEN_ONE_BINDING(a, ...) , &a = a
 #define DUMP_GEN_BINDING(binding) &DUMP_FOR_EACH(DUMP_GEN_ONE_BINDING, DUMP_RM_PARENS(binding))
 
 #define DUMP_INTERNAL(binding, ...)                    \
