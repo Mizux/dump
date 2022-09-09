@@ -5,7 +5,7 @@ target_include_directories(dump
   INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
-target_compile_features(dump INTERFACE cxx_std_17)
+target_compile_features(dump INTERFACE cxx_std_20)
 set_target_properties(dump PROPERTIES
   VERSION ${PROJECT_VERSION}
   PUBLIC_HEADER include/dump/dump.hpp)
